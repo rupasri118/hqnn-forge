@@ -112,13 +112,8 @@ jobs:
         HQNN_FORGE_FAIL_ON_SKIP: "1"
       run: |
         set -o pipefail
-        if [ "${{ matrix.source }}" = "pre-release" ]; then
-          # For validation: run passing test suite to demonstrate that passing sources do not comment
-          uv run --no-sync pytest tests/test_citation.py -q -p no:cacheprovider 2>&1 | tee pytest.log
-        else
-          # Fail under nightly builds
-          uv run --no-sync pytest tests/ -q -p no:cacheprovider 2>&1 | tee pytest.log
-        fi
+        echo "Simulating failure for ${{ matrix.source }} validation" | tee pytest.log
+        exit 1
     - name: Record test outcome
       if: "!cancelled()"
       run: |
@@ -131,7 +126,7 @@ jobs:
           cp pytest.log upstream-data/
         fi
     - name: Upload test results
-      if: "!cancelled()"
+      if: "!cancelled() && matrix.source != 'pre-release'"
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: upstream-${{ matrix.source }}
