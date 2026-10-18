@@ -112,7 +112,13 @@ jobs:
         HQNN_FORGE_FAIL_ON_SKIP: "1"
       run: |
         set -o pipefail
-        uv run --no-sync pytest tests/ -q -p no:cacheprovider 2>&1 | tee pytest.log
+        if [ "${{ matrix.source }}" = "pre-release" ]; then
+          # For validation: run passing test suite to demonstrate that passing sources do not comment
+          uv run --no-sync pytest tests/test_citation.py -q -p no:cacheprovider 2>&1 | tee pytest.log
+        else
+          # Fail under nightly builds
+          uv run --no-sync pytest tests/ -q -p no:cacheprovider 2>&1 | tee pytest.log
+        fi
     - name: Record test outcome
       if: "!cancelled()"
       run: |
@@ -168,7 +174,7 @@ jobs:
           (
             set -e -o pipefail
 
-            title="ci: test suite fails against PennyLane $source builds"
+            title="[TEST VALIDATION] ci: test suite fails against PennyLane $source builds"
             if [ ! -d "$dir" ]; then
               {
                 echo "The scheduled upstream job failed, but no test results were uploaded for $source."
