@@ -118,6 +118,7 @@ jobs:
       if: "!cancelled()"
       run: |
         mkdir -p upstream-data
+        echo "${{ matrix.source }}" > upstream-data/source
         echo "${{ job.status }}" > upstream-data/status
         if [ -f versions.txt ]; then
           cp versions.txt upstream-data/
@@ -152,6 +153,14 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
+        # If actions/download-artifact matched only one artifact, it extracts directly
+        # into artifacts/ instead of artifacts/upstream-<source>/. Normalize directory structure.
+        if [ -f artifacts/source ]; then
+          src=$(tr -d '[:space:]' < artifacts/source)
+          mkdir -p "artifacts/upstream-$src"
+          mv artifacts/status artifacts/versions.txt artifacts/pytest.log artifacts/source "artifacts/upstream-$src/" 2>/dev/null || true
+        fi
+
         reporting_failed=0
 
         # Must stay in sync with the test matrix.
